@@ -43,26 +43,26 @@ int main() {
 		if (fileCheck(img) == 1) {
 			if (processImg(img) == 1) {
 				
-				getch();
+				getchar();
 				return 0;
 			}
 			else {
 				printf("There was a problem processing the image\n");
 				fclose(img);
-				getch();
+				getchar();
 				return 0;
 			}
 		}
 		else {
 			printf("File is not an valid image\n");
 			fclose(img);
-			getch();
+			getchar();
 			return 0;
 		}
 	}
 	else {
 		printf("There was a problem opening the file\n");
-		getch();
+		getchar();
 		return 0;
 	}
 
