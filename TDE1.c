@@ -38,7 +38,7 @@ int main() {
 
 	printf("Input image filename to be analyzed: ");
 	scanf("%s", kin);
-	/*Abre arquivo, checa se é ppm e segue para o processamento de imagem*/
+	/*Abre arquivo, checa se Ã© ppm e segue para o processamento de imagem*/
 	if ((img = fopen(kin, "rb")) != NULL) {
 		if (fileCheck(img) == 1) {
 			if (processImg(img) == 1) {
