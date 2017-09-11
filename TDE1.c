@@ -103,7 +103,7 @@ int processImg(FILE *img) {
 	printf("width: %d height:%d\n", row, line);
 
 	/*ALLOCATE PIXEL MATRIX*/
-	if ((px = (pixel*)calloc(line, sizeof(pixel))) != NULL) {
+	if ((px = (pixel**)calloc(line, sizeof(pixel))) != NULL) {
 		for (i = 0; i < line; i++) {
 			if ((px[i] = (pixel*)calloc(row, sizeof(pixel))) == NULL)
 				break;
