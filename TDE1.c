@@ -1,3 +1,12 @@
+/*
+  _________________________________
+  TDE Contador de objetos
+  Estrutura de dados
+  Matheus Lemos - PUCPR 2017
+  _________________________________
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +43,6 @@ int main() {
 	FILE *img;
 	char kin[20];
 	pixel **px;
-	int a = 0;
 
 	printf("Input image filename to be analyzed: ");
 	scanf("%s", kin);
@@ -136,14 +144,14 @@ int processImg(FILE *img) {
 				fscanf(img, "%c%c%c", &r, &g, &b);
 				if ((r == rbg) && (g == gbg) && (b == bbg)) {
 					px[i][j].bg = 1;
-					//printf("#");
+					/*printf("#");*/
 				}
 				else {
 					px[i][j].bg = 0;
-					//printf("*");
+					/*printf("*");*/
 				}
 			}
-			//printf("\n");
+			/*printf("\n");*/
 		}
 		fclose(img);
 
