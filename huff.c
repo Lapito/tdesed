@@ -13,7 +13,7 @@ struct sNo {
 }typedef sNo;
 
 sNo *inicializa();
-sNo *cria(int valor, sNo *sae, sNo *sad);
+sNo *cria(int valor, int frequencia, sNo *sae, sNo *sad);
 void compactar(char *arquivo);
 void ordena(sNo *fila, int tam);
 sNo *tiraPrimeiro(sNo *fila, int tamanho);
@@ -73,7 +73,11 @@ void compactar(char *arquivo) {
 	int freq[256], counttotal, tam;
 	int i, j=0;
 	char *in;
-	sNo *fila;
+	//sNo *fila;
+
+	static sNo fila[256];
+
+	//fila[256];
 
 	printf("Arquivo %s\n\n", arquivo);
 
@@ -100,7 +104,7 @@ void compactar(char *arquivo) {
 			freq[c]++;
 		}
 		fclose(arq);
-		fila = (sNo *)calloc(256, sizeof(sNo));
+		//fila = (sNo *)calloc(256, sizeof(sNo));
 
 		printf("Conteudo:\n");
 		printf("%s\n\n", in);
@@ -119,8 +123,9 @@ void compactar(char *arquivo) {
 				j++;
 			}
 		}
-		tam = tamanhoFila(&*fila);
-		ordena(&*fila, tam);
+		tam = tamanhoFila(&fila);
+		printf("\n\nTAMANHO %d\n\n", tam);
+		ordena(&fila, tam);
 
 		for (i = 0; i < tam; i++) {
 			printf("%d->%c\n", fila[i].freq,fila[i].val);
@@ -177,7 +182,7 @@ void ordena(sNo *fila, int tam) {
 	for (i = 1; i < tam; i++) {
 		*aux = fila[i];
 		j = i - 1;
-		while (j >= 0 && fila[j].freq > aux->freq) {
+		while (j >= 0 && fila[j].freq < aux->freq) {
 			fila[j + 1] = fila[j];
 			j--;
 		}
