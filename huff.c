@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #define ERRO 0
 #define OK 1
@@ -22,7 +23,8 @@ sNo *cria(int valor, int frequencia, sNo *sae, sNo *sad);
 void compactar(char *arquivo);
 void ordena(sNo *fila, int tam);
 sNo *tiraUltimo(sNo *fila, int tamanho);
-int tamanhoFila(sNo *fila);
+int tamanhoCod(char *codigo);
+//int tamanhoFila(sNo *fila);
 //sNo *criaHuffman(sNo *no1, sNo *no2);
 sNo *criaHuffman(sNo *fila, int tamanho);
 void imprime_textual(sNo *a) {
@@ -36,12 +38,44 @@ void imprime_textual(sNo *a) {
 	}
 }
 
-void criaTsim(tSim *tsim) { //Tabela de simbolos
-	tSim *aux;
+void criaTsim(tSim *tsim, sNo *a) {
+	static int i = 0;
+	int k;
 	static char trail[256];
+	tSim *aux;
 
+	aux = (tSim*)calloc(1, sizeof(tSim));
 
-
+	if (a == NULL)
+		return NULL;
+	if (a->esq != NULL) {
+		trail[i] = '0';
+		i++;
+		criaTsim(tsim, a->esq);
+	}
+	if (a->dir != NULL) {
+		trail[i] = '1';
+		i++;
+		criaTsim(tsim, a->dir);
+	}
+	if ((a->esq == NULL) && (a->dir == NULL)) {
+		for (k = 0; k < i; k++) {
+			aux->cod[k] = trail[k];
+		}
+		aux->val = a->val;
+		tsim[aux->val] = *aux;
+		trail[i - 1] = NULL;
+		i--;
+	}
+	else {
+		if (i <= 0) {
+			return 1;
+		}
+		
+		trail[i - 1] = NULL;
+		i--;
+		
+	}
 }
 
 
@@ -92,7 +126,7 @@ void compactar(char *arquivo) {
 	//sNo *fila;
 
 	static sNo fila[256];
-	tSim tsim[256];
+	static tSim tsim[256];
 
 	//fila[256];
 
@@ -104,12 +138,12 @@ void compactar(char *arquivo) {
 	}
 
 	if ((arq = fopen(arquivo, "rb")) != NULL) {
-		
-		
+
+
 		fseek(arq, 0, SEEK_END);
 		counttotal = ftell(arq);
 		fseek(arq, 0, SEEK_SET);
-		in = (char*) calloc(counttotal+1, sizeof(char));
+		in = (char*)calloc(counttotal + 1, sizeof(char));
 		if (in == NULL) {
 			return 0;
 		}
@@ -140,21 +174,51 @@ void compactar(char *arquivo) {
 				j++;
 			}
 		}
-		tam = tamanhoFila(&fila);
-		printf("\n\nTAMANHO %d\n\n", tam);
-		ordena(&fila, tam);
-
-		for (i = 0; i < tam; i++) {
+		//tam = tamanhoFila(&fila);
+		//ordena(&fila, j);
+		/*
+		for (i = 0; i < j; i++) {
 			printf("%d->%c\n", fila[i].freq,fila[i].val);
 		}
-		
+		*/
+
 		sNo hufftree;
 
-		printf("\n\n%x\n\n", &fila); //imprime local da fila so pq nn sei queria ver no q dava
-
-		printf("\n\n");
-		hufftree = *criaHuffman(&fila, tam);
+		printf("\nArvore de Huffman:\n");
+		hufftree = *criaHuffman(&fila, j);
 		imprime_textual(&hufftree);
+
+		criaTsim(&tsim, &hufftree);
+		printf("\n\nTabela de simbolos:\n");
+		for (int a = 0; a < 256; a++) {
+			if (tsim[a].val != NULL) {
+				printf("%c - ", a);
+			}
+			for (int b = 0; b < 256; b++) {
+				if (tsim[a].cod[b] != '\0') {
+					printf("%c", tsim[a].cod[b]);
+				}
+			}
+			if (tsim[a].val != NULL) {
+				printf("\n");
+			}
+		}
+
+		int bitcount = 0, bitatual=0;
+
+		printf("\nQuantidade de bits:\n");
+		for (i = 0; i < 256; i++) {
+
+			if (freq[i] != 0) {
+				printf("%c - %d => ", i, freq[i]);
+				bitatual = tamanhoCod(&tsim[i].cod);
+				bitatual *= freq[i];
+				bitcount += bitatual;
+				printf("%d, acumulando %d\n", bitatual, bitcount);
+
+			}
+
+		}
 
 
 	}
@@ -207,9 +271,9 @@ sNo *tiraUltimo(sNo *fila, int tamanho) {
 	return aux;
 }
 
-int tamanhoFila(sNo *fila) {
+int tamanhoCod(char *codigo) {
 	int count=0;
-	while (fila[count].val != NULL) {
+	while (codigo[count] != NULL) {
 		count++;
 	}
 	return count;
@@ -230,6 +294,7 @@ sNo *criaHuffman(sNo *fila, int tamanho) {
 	notemp2 = (sNo*)calloc(1, sizeof(sNo));
 
 	while (tam > 1) {
+		ordena(&*fila, tam);
 		notemp1 = tiraUltimo(&*fila, tam);
 		tam--;
 		notemp2 = tiraUltimo(&*fila, tam);
@@ -237,7 +302,6 @@ sNo *criaHuffman(sNo *fila, int tamanho) {
 		hufftree = cria(0, (notemp1->freq) + (notemp2->freq), notemp1, notemp2);
 		fila[tam] = *hufftree;
 		tam++;
-		ordena(&*fila, tam);
 	}
 
 	//free(notemp1);
