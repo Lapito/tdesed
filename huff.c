@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 #define ERRO 0
 #define OK 1
@@ -121,7 +120,7 @@ void compactar(char *arquivo) {
 
 	FILE *arq;
 	int freq[256], counttotal, tam;
-	int i, j=0;
+	int i, j=0,k;
 	char *in;
 	//sNo *fila;
 
@@ -220,7 +219,104 @@ void compactar(char *arquivo) {
 
 		}
 
+		char *bitsout;
+		bitsout = (char *)calloc(bitcount + 1, sizeof(char));
+		j = 0;
 
+		for (i = 0; i < counttotal; i++) {
+			for (k = 0; k < tamanhoCod(&tsim[in[i]].cod); k++) {
+				bitsout[j] = tsim[in[i]].cod[k];
+				j++;
+			}
+		}
+
+		printf("\nConjunto de bits de saida:\n%s\n", bitsout);
+
+		//printf("%d %d", bitcount, counttotal);
+		printf("\nTaxa de compressao: %.2f%c\n", (100 - (((float)bitcount / ((float)counttotal * 8)) * 100)), (char)'%');
+		printf("Tamanho original: %d bytes -> %d bits\n", counttotal, (counttotal*8));
+		printf("Tamanho comprimido: %d bytes -> %d bits\n", ((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8), bitcount);
+
+		unsigned char bittemp, mask;
+		unsigned char *saida;
+
+		int desloc, andar = 0;
+		saida = (char *)calloc(bitcount, sizeof(char));
+
+		for (i = 0; i < (((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8)); i++) {
+			if ((bitsout[andar + 8] == NULL) && (bitcount%8 != 0)) {
+				desloc = 0;
+				bittemp = 0x0;
+				for (j = 0; j <= (8-(bitcount%8)); j++) {
+					if (bitsout[j+andar] == '1') {
+						mask = 0x80;
+						mask >>= desloc;
+						bittemp |= mask;
+						desloc++;
+					}
+					else {
+						desloc++;
+					}
+				}
+				saida[i] = bittemp;
+			}
+			else {
+				desloc = 0;
+				bittemp = 0x0;
+				for (j = 0; j <= 8; j++) {
+					if (bitsout[j+andar] == '1') {
+						mask = 0x80;
+						mask >>= desloc;
+						bittemp |= mask;
+						desloc++;
+					}
+					else {
+						desloc++;
+					}
+				}
+				
+			}
+			saida[i] = bittemp;
+			andar += 8;
+		}
+		printf("\nBytes de saida:\n");
+		for (i = 0; i < (((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8)); i++) {
+			printf(" %x", saida[i]);
+		}
+
+		//SALVA O ARQUIVO
+
+		FILE *out;
+		char nomeout[BUFSIZ];
+		
+		strcpy(nomeout, arquivo);
+		nomeout[strlen(arquivo) - 1] = 'f';
+		nomeout[strlen(arquivo) - 2] = 'u';
+		nomeout[strlen(arquivo) - 3] = 'h';
+
+		//strncat(nomeout, "huf", (strlen(arquivo) - 4));
+		//strcat(nomeout-3, "huf");
+		
+
+
+		if ((out = fopen(nomeout, "wb")) != NULL) {
+			fprintf(out, "PFNBDH\n");
+			fprintf(out, "%d\n", counttotal);
+			fprintf(out, "%s\n", arquivo);
+			for (i = 0; i < 256; i++) {
+				if (freq[i] != 0) {
+					fprintf(out, "%c%d", i, freq[i]);
+				}
+			}
+			fprintf(out, "%c\n",17);
+			//memcpy(&out, &saida, (((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8)));
+			fwrite(saida, sizeof(char), (((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8)), out);
+		}
+		else {
+			printf("\nNao foi possivel salvar o arquivo .huf\n");
+		}
+	
+		fclose(out);
 	}
 	else {
 		printf("Nao foi possivel abrir o arquivo\n");
