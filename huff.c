@@ -20,8 +20,10 @@ struct tSim {
 sNo *inicializa();
 sNo *cria(int valor, int frequencia, sNo *sae, sNo *sad);
 void compactar(char *arquivo);
+void descompactar(char *arquivo);
 void ordena(sNo *fila, int tam);
 sNo *tiraUltimo(sNo *fila, int tamanho);
+int checaHuf(FILE *arq);
 int tamanhoCod(char *codigo);
 //int tamanhoFila(sNo *fila);
 //sNo *criaHuffman(sNo *no1, sNo *no2);
@@ -30,7 +32,8 @@ void imprime_textual(sNo *a) {
 	if (a == NULL)
 		printf("<>");
 	else {
-		printf("<%c/%d", a->val, a->freq);
+		a->val == 0 ? printf("<__/%d", a->freq) : printf("<%c/%d", a->val, a->freq);
+		//printf("<%c/%d", a->val, a->freq);
 		imprime_textual(a->esq);
 		imprime_textual(a->dir);
 		printf(">");
@@ -112,7 +115,7 @@ int main() {
 	char in[BUFSIZ];
 
 	gets(in);
-	compactar(in);
+	descompactar(in);
 
 }
 
@@ -324,6 +327,100 @@ void compactar(char *arquivo) {
 
 }
 
+void descompactar(char *arquivo) {
+
+	FILE *arq, *out;
+	char BUFFER[BUFSIZ], nomeorig[BUFSIZ], letralida;
+	int tamoriginal, freq[256], freqlido, bitslidos = 0;
+	int i, j;
+	sNo fila[256];
+	sNo hufftree;
+
+	for (i = 0; i < 256; i++) {
+		freq[i] = 0;
+	}
+
+	if ((arq = fopen(arquivo, "rb")) != NULL) {
+		if (checaHuf(arq)) {
+			fseek(arq, 7, SEEK_SET);
+			fscanf(arq, "%d", &tamoriginal);
+			fgets(BUFFER, 15, arq);
+			fscanf(arq, "%s", nomeorig);
+			fgets(BUFFER, 15, arq);
+			if ((out = fopen(nomeorig, "wb") != NULL)) {
+
+				while (1) {
+					fscanf(arq, "%c", &letralida);
+					if (letralida != 17) {
+						fscanf(arq, "%d", &freqlido);
+						freq[letralida] = freqlido;
+					}
+					else {
+						break;
+					}
+
+				}
+
+				for (i = 0; i < 256; i++) {
+					if (freq[i] != 0) {
+						printf("%c -> %d\n", i, freq[i]);
+					}
+				}
+				
+				j = 0;
+				for (i = 0; i < 256; i++) {
+					if (freq[i] != 0) {
+						fila[j] = *cria(i, freq[i], inicializa(), inicializa());
+						j++;
+					}
+				}
+
+				printf("\nArvore de Huffman:\n");
+				hufftree = *criaHuffman(&fila, j);
+				imprime_textual(&hufftree);
+
+
+
+				fgets(BUFFER, 15, arq);
+
+				char mask, bittemp;
+				int desloc;
+				sNo *hufftemp;
+
+				while ((letralida = fgetc(arq)) != EOF) {
+					bittemp = letralida;
+					desloc = 0;
+					for (i = 0; i < 8; i++) {
+						bittemp = letralida;
+						mask = 0x80;
+						mask >>= desloc;
+						bittemp ^= mask;
+						//FAZER FUNCAO QUE ANDA NA ARVORE DO HUFFMAN
+					}
+
+
+				}
+
+				printf("\n%s\n", BUFFER);
+				printf("\n%d", ftell(arq));
+				//fseek(arq, 7, SEEK_SET);
+			}
+			else {
+				printf("O arquivo de saida nao pode ser criado\n");
+			}
+		}
+		else {
+			printf("O arquivo nao e do tipo .huf\n");
+		}
+	}
+	else {
+		printf("Nao foi possivel abrir o arquivo\n");
+	}
+
+
+
+}
+
 sNo *inicializa(void) {
 	return NULL;
 }
@@ -365,6 +462,17 @@ sNo *tiraUltimo(sNo *fila, int tamanho) {
 	*aux = fila[tamanho - 1];
 	fila[tamanho - 1] = *cria(0, 0, inicializa(), inicializa());
 	return aux;
+}
+
+int checaHuf(FILE *arq) {
+	char buffer[BUFSIZ];
+	fgets(buffer, 15, arq);
+	if (strcmp(buffer, "PFNBDH\n") == 0) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 int tamanhoCod(char *codigo) {
