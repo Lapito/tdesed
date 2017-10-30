@@ -14,7 +14,7 @@ struct sNo {
 
 struct tSim {
 	int val;
-	char cod[256];
+	char cod[2048];
 }typedef tSim;
 
 sNo *inicializa();
@@ -25,6 +25,7 @@ void ordena(sNo *fila, int tam);
 sNo *tiraUltimo(sNo *fila, int tamanho);
 int checaHuf(FILE *arq);
 int tamanhoCod(char *codigo);
+sNo *caminhaHuff(sNo hufftree, int valor);
 //int tamanhoFila(sNo *fila);
 //sNo *criaHuffman(sNo *no1, sNo *no2);
 sNo *criaHuffman(sNo *fila, int tamanho);
@@ -196,7 +197,7 @@ void compactar(char *arquivo) {
 			if (tsim[a].val != NULL) {
 				printf("%c - ", a);
 			}
-			for (int b = 0; b < 256; b++) {
+			for (int b = 0; b < 2048; b++) {
 				if (tsim[a].cod[b] != '\0') {
 					printf("%c", tsim[a].cod[b]);
 				}
@@ -206,7 +207,7 @@ void compactar(char *arquivo) {
 			}
 		}
 
-		int bitcount = 0, bitatual=0;
+		long int bitcount = 0, bitatual=0;
 
 		printf("\nQuantidade de bits:\n");
 		for (i = 0; i < 256; i++) {
@@ -216,7 +217,7 @@ void compactar(char *arquivo) {
 				bitatual = tamanhoCod(&tsim[i].cod);
 				bitatual *= freq[i];
 				bitcount += bitatual;
-				printf("%d, acumulando %d\n", bitatual, bitcount);
+				printf("%ld, acumulando %ld\n", bitatual, bitcount);
 
 			}
 
@@ -250,7 +251,7 @@ void compactar(char *arquivo) {
 			if ((bitsout[andar + 8] == NULL) && (bitcount%8 != 0)) {
 				desloc = 0;
 				bittemp = 0x0;
-				for (j = 0; j <= (8-(bitcount%8)); j++) {
+				for (j = 0; j < (8-(bitcount%8)); j++) {
 					if (bitsout[j+andar] == '1') {
 						mask = 0x80;
 						mask >>= desloc;
@@ -266,7 +267,7 @@ void compactar(char *arquivo) {
 			else {
 				desloc = 0;
 				bittemp = 0x0;
-				for (j = 0; j <= 8; j++) {
+				for (j = 0; j < 8; j++) {
 					if (bitsout[j+andar] == '1') {
 						mask = 0x80;
 						mask >>= desloc;
@@ -347,7 +348,7 @@ void descompactar(char *arquivo) {
 			fgets(BUFFER, 15, arq);
 			fscanf(arq, "%s", nomeorig);
 			fgets(BUFFER, 15, arq);
-			if ((out = fopen(nomeorig, "wb") != NULL)) {
+			if ((out = fopen(nomeorig, "wb")) != NULL) {
 
 				while (1) {
 					fscanf(arq, "%c", &letralida);
@@ -378,30 +379,71 @@ void descompactar(char *arquivo) {
 				printf("\nArvore de Huffman:\n");
 				hufftree = *criaHuffman(&fila, j);
 				imprime_textual(&hufftree);
-
+				printf("\n\n");
 
 
 				fgets(BUFFER, 15, arq);
 
-				char mask, bittemp;
-				int desloc;
+				unsigned char mask, bittemp;
+				int desloc, locatual, locatotal;
 				sNo *hufftemp;
+				//hufftemp = (sNo*)calloc(sizeof(hufftree), 1);
+				hufftemp = &hufftree;
 
-				while ((letralida = fgetc(arq)) != EOF) {
-					bittemp = letralida;
+				locatual = ftell(arq);
+				fseek(arq, 0, SEEK_END);
+				locatotal = ftell(arq);
+				fseek(arq, locatual, SEEK_SET);
+
+
+
+				while (ftell(arq) != locatotal) {
+					letralida = fgetc(arq);
 					desloc = 0;
 					for (i = 0; i < 8; i++) {
 						bittemp = letralida;
 						mask = 0x80;
 						mask >>= desloc;
-						bittemp ^= mask;
+						bittemp &= mask;
+						bittemp <<= desloc;
+						if (bitslidos != tamoriginal) {
+							if (bittemp == 0x80) { /*QUANDO FOR 1, MAS 1000 0000 E NAO 0000 0001*/
+								hufftemp = hufftemp->dir;
+								if ((hufftemp->esq == NULL) && (hufftemp->dir == NULL)) {
+									//fprintf(out, "%c", hufftemp->val);
+									fputc(hufftemp->val, out);
+									//printf("%c", hufftemp->val);
+									bitslidos++;
+									//hufftemp = NULL;
+									hufftemp = &hufftree;
+								}
+								desloc++;
+							}
+							else {
+								hufftemp = hufftemp->esq;
+								if ((hufftemp->esq == NULL) && (hufftemp->dir == NULL)) {
+									//fprintf(out, "%c", hufftemp->val);
+									fputc(hufftemp->val, out);
+									//printf("%c", hufftemp->val);
+									bitslidos++;
+									//hufftemp = NULL;
+									hufftemp = &hufftree;
+								}
+								desloc++;
+							}
+						}
+						else {
+							break;
+						}
 						//FAZER FUNCAO QUE ANDA NA ARVORE DO HUFFMAN
 					}
 
+					
 
 				}
-
+				fclose(out);
 				printf("\n%s\n", BUFFER);
+				printf("\n%d", ftell(arq));
 				printf("\n%d", ftell(arq));
 				//fseek(arq, 7, SEEK_SET);
 			}
@@ -513,4 +555,13 @@ sNo *criaHuffman(sNo *fila, int tamanho) {
 	
 	return hufftree;
 
+}
+
+sNo *caminhaHuff(sNo *hufftree, int valor) {
+	if (valor == 0) {
+		return hufftree->esq;
+	}
+	else {
+		return hufftree->dir;
+	}
 }
