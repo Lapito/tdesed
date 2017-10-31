@@ -177,8 +177,12 @@ void compactar(char *arquivo) {
 
 		printf("\nConjunto de bits de saida:\n%s\n", bitsout);
 
-		//printf("%d %d", bitcount, counttotal);
-		printf("\nTaxa de compressao: %.2f%c\n", (100 - (((float)bitcount / ((float)counttotal * 8)) * 100)), (char)'%');
+		float taxacompress;
+		taxacompress = (((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8));
+		
+		taxacompress = ((((float)counttotal - taxacompress) / (float)counttotal)*100);
+
+		printf("\nTaxa de compressao: %.2f%c\n", taxacompress, (char)'%');
 		printf("Tamanho original: %d bytes -> %d bits\n", counttotal, (counttotal*8));
 		printf("Tamanho comprimido: %d bytes -> %d bits\n", ((bitcount % 8) != 0) ? ((bitcount / 8) + 1) : (bitcount / 8), bitcount);
 
@@ -242,7 +246,7 @@ void compactar(char *arquivo) {
 		nomeout[strlen(arquivo) - 2] = 'u';
 		nomeout[strlen(arquivo) - 3] = 'h';
 
-		if ((out = fopen(nomeout, "wb")) != NULL) { /*Abre arquivo para gravacao com extencao .huf*/
+		if ((out = fopen(nomeout, "wb")) != NULL) { /*Abre arquivo para gravacao com extensao .huf*/
 			fprintf(out, "PFNBDH\n"); /*Identificador do arquivo*/
 			fprintf(out, "%d\n", counttotal); /*Salva a quantidade de bytes do arquivo original*/
 			fprintf(out, "%s\n", arquivo); /*Salva a tabela de frequencia*/
@@ -301,7 +305,9 @@ void descompactar(char *arquivo) {
 
 				}
 
-				for (i = 0; i < 256; i++) { /*Imprime tabela de simbolos*/
+				printf("Lista de frequencias:\n");
+
+				for (i = 0; i < 256; i++) { /*Imprime lista de frequencias*/
 					if (freq[i] != 0) {
 						printf("%c -> %d\n", i, freq[i]);
 					}
@@ -340,6 +346,7 @@ void descompactar(char *arquivo) {
 				locatotal = ftell(arq);
 				fseek(arq, locatual, SEEK_SET); /*Delimita ate onde ler o arquivo baseado no ultimo byte*/
 
+				printf("Conteudo:\n");
 				while (ftell(arq) != locatotal) { /*Ira ler o arquivo ate o fim*/
 					letralida = fgetc(arq);
 					desloc = 0;
@@ -354,6 +361,7 @@ void descompactar(char *arquivo) {
 								hufftemp = hufftemp->dir; /*Anda para a direita caso 1*/
 								if ((hufftemp->esq == NULL) && (hufftemp->dir == NULL)) { /*Caso encontre uma folha, imprime a letra correspondente*/
 									fputc(hufftemp->val, out);
+									printf("%c", hufftemp->val);
 									bitslidos++;
 									hufftemp = &hufftree; /*Volta para o topo da arvore*/
 								}
@@ -363,6 +371,7 @@ void descompactar(char *arquivo) {
 								hufftemp = hufftemp->esq; /*Anda para a esqueda caso 0*/
 								if ((hufftemp->esq == NULL) && (hufftemp->dir == NULL)) {
 									fputc(hufftemp->val, out);
+									printf("%c", hufftemp->val);
 									bitslidos++;
 									hufftemp = &hufftree;
 								}
@@ -374,9 +383,9 @@ void descompactar(char *arquivo) {
 						}
 					}
 				}
-				
+
 				fclose(out); /*Fecha e salva o arquivo descompactado*/
-				printf("\n<%s> descompactado com sucesso!\n", nomeorig);
+				printf("\n\n<%s> descompactado com sucesso!\n", nomeorig);
 			}
 			else {
 				printf("O arquivo de saida nao pode ser criado\n");
